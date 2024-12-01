@@ -29,6 +29,7 @@ fn p_line(s: String) -> List(Int) {
   |> flat_map(p_sm)
 }
 
+/// Get the right or left value in a list of pairs 
 fn extract_value(pairs: List(List(Int)), index: Int) -> List(Int) {
   pairs
   |> list.map(fn(pair: List(Int)) -> Int {
