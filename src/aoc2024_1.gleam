@@ -43,10 +43,7 @@ fn extract_value(pairs: List(List(Int)), index: Int) -> List(Int) {
 }
 
 pub fn main() {
-  let records: String = case read(from: "./aoc2024.txt") {
-    Ok(records) -> records
-    _ -> panic
-  }
+  let assert Ok(records) = read(from: "./aoc2024_1.gleam")
   let a: List(List(Int)) =
     string.trim_end(records)
     |> string.trim
@@ -60,7 +57,7 @@ pub fn main() {
 
   list.zip(le, ri)
   |> list.map(fn(x: #(Int, Int)) -> Int {
-    let #(l, r): #(Int, Int) = x
+    let #(l, r) = x
     l - r |> int.absolute_value
   })
   |> int.sum
