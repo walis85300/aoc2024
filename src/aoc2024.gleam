@@ -8,16 +8,21 @@ import simplifile.{read}
 
 fn process(a: Int, b: Int, r: List(Int)) -> Int {
   case a, b, r {
+    // last case, the last two numbers, only apply the mul
     _, _, [] -> {
       a * b
     }
+    // recursive operation
+    // apply the multiplication and add the result
     a, b, [c, d, ..rr] -> {
       { a * b } + process(c, d, rr)
     }
+    // hehe
     _, _, _ -> panic
   }
 }
 
+/// Parse a number in string format to int
 fn parse_number(text: String) -> Int {
   case int.parse(text) {
     Ok(number) -> number
@@ -39,6 +44,7 @@ fn process_do(do_lines: List(String)) {
 
 fn calculate(numbers: List(Int)) -> Int {
   case numbers {
+    // this is the first iteration of process function
     [a, b, ..r] -> process(a, b, r)
     _ -> panic
   }
