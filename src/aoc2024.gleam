@@ -73,7 +73,7 @@ pub fn main() {
     rest
     |> list.map(fn(x) { string.split(x, on: "do()") })
     |> list.map(process_do)
-    |> list.flat_map(fn(x) { x })
+    |> list.flat_map(same)
     |> list.append([fm])
 
   valid_do
