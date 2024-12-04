@@ -37,14 +37,14 @@ fn process_do(do_lines: List(String)) {
   }
 }
 
-fn calculate(numbers) {
+fn calculate(numbers: List(Int)) -> Int {
   case numbers {
     [a, b, ..r] -> process(a, b, r)
     _ -> panic
   }
 }
 
-fn same(x) {
+fn same(x: a) -> a {
   x
 }
 
