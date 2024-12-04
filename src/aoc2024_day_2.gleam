@@ -76,7 +76,8 @@ pub fn main() {
       [] -> False
     }
     case result {
-      False -> try_removing_one(line) // for the 2nd case
+      False -> try_removing_one(line)
+      // for the 2nd case
       _ -> result
     }
   })
