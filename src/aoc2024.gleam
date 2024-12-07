@@ -1,140 +1,83 @@
-import gleam/dict
+import gleam/dict.{type Dict}
 import gleam/int
 import gleam/io
 import gleam/list
 import gleam/string
 import simplifile.{read}
 
-pub fn main() {
-  let assert Ok(records) = read(from: "./aoc2024_5.txt")
+type Point =
+  #(Int, Int)
 
-  let lines =
-    records
-    |> string.trim_end
-    |> string.split(on: "\n\n")
-    |> list.map(fn(x) { string.split(x, on: "\n") })
+type Element =
+  #(Point, String)
 
-  let #(rules, printing) = case lines {
-    [a, b] -> #(a, b)
+type Map =
+  List(Element)
+
+type DictMap =
+  Dict(Point, String)
+
+const empty_cell = "."
+
+const blocked_cell = "#"
+
+const move_up = #(0, -1)
+
+const move_down = #(0, 1)
+
+const move_right = #(1, 0)
+
+const move_left = #(-1, 0)
+
+const up = "^"
+
+const down = "v"
+
+const left = ">"
+
+const right = "<"
+
+fn move_point(p1: Point, p2: Point) -> Point {
+  let #(x1, y1) = p1
+  let #(x2, y2) = p2
+  #(x1 + x2, y1 + y2)
+}
+
+fn find_initial_position(list_positions: Map) {
+  case list_positions {
+    [#(a, b), ..] if b == "^" -> #(a, b)
+    [_, ..l] -> find_initial_position(l)
     _ -> panic
   }
+}
 
-  let prev_numbers =
-    rules
-    |> list.map(fn(x) {
-      let a = string.split(x, on: "|")
+fn move_in_map(point: Point, map: DictMap, direction: Point) -> DictMap {
+  map
+}
 
-      case a {
-        [number, _] -> number
-        _ -> panic
-      }
+pub fn main() {
+  let assert Ok(records) = read(from: "./aoc2024_6.txt")
+
+  let map: Map =
+    records
+    |> string.trim_end
+    |> string.split(on: "\n")
+    |> list.index_map(fn(y, index_y) {
+      string.split(y, on: "")
+      |> list.index_map(fn(x, index_x) { #(#(index_x, index_y), x) })
     })
+    |> list.flat_map(fn(x) { x })
 
-  let post_numbers =
-    rules
-    |> list.map(fn(x) {
-      let a = string.split(x, on: "|")
+  let dict_map: DictMap = map |> dict.from_list
 
-      case a {
-        [_, number] -> number
-        _ -> panic
-      }
-    })
+  let #(initial_position, initial_sign): Element = find_initial_position(map)
 
-  let post_numbers_dict =
-    prev_numbers
-    |> list.map(fn(x) {
-      let after_numbers =
-        rules
-        |> list.filter(fn(y) {
-          let a = string.split(y, on: "|")
-          case a {
-            [n, _] if n == x -> True
-            _ -> False
-          }
-        })
-        |> list.map(fn(y) {
-          let a = string.split(y, on: "|")
-          case a {
-            [_, after_n] -> after_n
-            _ -> panic
-          }
-        })
-      #(x, after_numbers)
-    })
-    |> dict.from_list
-
-  let prev_numbers_dict =
-    post_numbers
-    |> list.map(fn(x) {
-      let prev_numbers =
-        rules
-        |> list.filter(fn(y) {
-          let a = string.split(y, on: "|")
-          case a {
-            [_, n] if n == x -> True
-            _ -> False
-          }
-        })
-        |> list.map(fn(y) {
-          let a = string.split(y, on: "|")
-          case a {
-            [prev_n, _] -> prev_n
-            _ -> panic
-          }
-        })
-      #(x, prev_numbers)
-    })
-    |> dict.from_list
-
-  printing
-  |> list.filter(fn(x) {
-    let p =
-      x
-      |> string.split(on: ",")
-
-    p
-    |> list.index_map(fn(number, index) {
-      let pn = list.take(p, index)
-      let nn = list.drop(p, index + 1)
-
-      let valid_next_number = case post_numbers_dict |> dict.get(number) {
-        Ok(u) -> u
-        _ -> []
-      }
-
-      let valid_prev_numbers = case prev_numbers_dict |> dict.get(number) {
-        Ok(u) -> u
-        _ -> []
-      }
-
-      let contains_invalid_previous =
-        list.any(valid_next_number, fn(vnn) { list.contains(pn, vnn) })
-
-      let contains_invalid_next =
-        list.any(valid_prev_numbers, fn(vpn) { list.contains(nn, vpn) })
-
-      case contains_invalid_previous, contains_invalid_next {
-        False, False -> True
-        _, _ -> False
-      }
-    })
-    |> list.all(fn(k) { k })
-  })
-  |> list.map(fn(e) {
-    let n = e |> string.split(on: ",")
-    let len = list.length(n)
-    let middle_i = len / 2
-
-    let assert Ok(middle) =
-      n
-      |> list.drop(middle_i)
-      |> list.first
-    case int.parse(middle) {
-      Ok(n) -> n
-      _ -> 0
-    }
-  })
-  |> list.fold(0, fn(a, acc) { a + acc })
-  |> io.debug
+  let initial_direction = case initial_sign {
+    e if e == up -> move_up
+    e if e == down -> move_down
+    e if e == left -> move_left
+    e if e == right -> move_right
+    _ -> panic
+  }
+  let nmap = move_in_map(initial_position, dict_map, initial_direction)
 }
