@@ -1,4 +1,3 @@
-import gleam/dict.{type Dict}
 import gleam/int
 import gleam/io
 import gleam/list
@@ -21,7 +20,7 @@ fn concat(a: Int, b: Int) -> Int {
   c
 }
 
-fn calculate(result: Int, numbers: List(Int), carry: Int) {
+fn calculate(result: Int, numbers: List(Int), carry: Int) -> Bool {
   case numbers, carry {
     [], carry if carry == result -> True
     _, carry if carry > result -> False
