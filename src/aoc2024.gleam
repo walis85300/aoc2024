@@ -13,6 +13,14 @@ fn summ(a: Int, b: Int) -> Int {
   a + b
 }
 
+fn concat(a: Int, b: Int) -> Int {
+  let a = a |> int.to_string
+  let b = b |> int.to_string
+  let c = a <> b
+  let assert Ok(c) = c |> int.parse
+  c
+}
+
 fn calculate(result: Int, numbers: List(Int), carry: Int) {
   case numbers, carry {
     [], carry if carry == result -> True
@@ -23,7 +31,13 @@ fn calculate(result: Int, numbers: List(Int), carry: Int) {
         True -> True
         False -> {
           let next_result = summ(carry, n)
-          calculate(result, r, next_result)
+          case calculate(result, r, next_result) {
+            True -> True
+            False -> {
+              let next_result = concat(carry, n)
+              calculate(result, r, next_result)
+            }
+          }
         }
       }
     }
