@@ -1,5 +1,4 @@
 import gleam/dict.{type Dict}
-import gleam/int
 import gleam/io
 import gleam/list
 import gleam/string
@@ -20,6 +19,8 @@ type DictMap =
 const empty_cell = "."
 
 const blocked_cell = "#"
+
+const used_cell = "X"
 
 const move_up = #(0, -1)
 
@@ -43,16 +44,43 @@ fn move_point(p1: Point, p2: Point) -> Point {
   #(x1 + x2, y1 + y2)
 }
 
-fn find_initial_position(list_positions: Map) {
+fn rotate(p: Point) -> Point {
+  case p {
+    x if x == move_up -> move_right
+    x if x == move_right -> move_down
+    x if x == move_down -> move_left
+    _ -> move_up
+  }
+}
+
+fn find_initial_position(list_positions: Map) -> Element {
   case list_positions {
-    [#(a, b), ..] if b == "^" -> #(a, b)
+    [#(a, b), ..] if b == up || b == down || b == left || b == right -> #(a, b)
     [_, ..l] -> find_initial_position(l)
     _ -> panic
   }
 }
 
 fn move_in_map(point: Point, map: DictMap, direction: Point) -> DictMap {
-  map
+  let map = map |> dict.insert(point, used_cell)
+
+  let next_poisition = move_point(point, direction)
+  let next_element = map |> dict.get(next_poisition)
+
+  case next_element {
+    Ok(e) -> {
+      case e {
+        e if e == blocked_cell -> {
+          let new_direction = rotate(direction)
+          move_in_map(point, map, new_direction)
+        }
+        _ -> {
+          move_in_map(next_poisition, map, direction)
+        }
+      }
+    }
+    _ -> map
+  }
 }
 
 pub fn main() {
@@ -70,14 +98,23 @@ pub fn main() {
 
   let dict_map: DictMap = map |> dict.from_list
 
-  let #(initial_position, initial_sign): Element = find_initial_position(map)
+  let #(initial_position, initial_sign): Element =
+    find_initial_position(map) |> io.debug
 
   let initial_direction = case initial_sign {
     e if e == up -> move_up
     e if e == down -> move_down
     e if e == left -> move_left
-    e if e == right -> move_right
-    _ -> panic
+    _ -> move_right
   }
-  let nmap = move_in_map(initial_position, dict_map, initial_direction)
+
+  move_in_map(initial_position, dict_map, initial_direction)
+  |> dict.to_list
+  |> list.count(fn(x) {
+    case x {
+      #(_, s) if s == used_cell -> True
+      _ -> False
+    }
+  })
+  |> io.debug
 }
