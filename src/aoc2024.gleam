@@ -20,15 +20,16 @@ fn concat(a: Int, b: Int) -> Int {
   c
 }
 
-fn calculate(result: Int, numbers: List(Int), carry: Int) -> Bool {
+fn test_line(result: Int, numbers: List(Int), carry: Int) -> Bool {
   case numbers, carry {
     [], carry if carry == result -> True
     _, carry if carry > result -> False
     [n, ..r], carry -> {
       [
-        calculate(result, r, mult(carry, n)),
-        calculate(result, r, summ(carry, n)),
-        calculate(result, r, concat(carry, n)), // for 2nd part
+        test_line(result, r, mult(carry, n)),
+        test_line(result, r, summ(carry, n)),
+        test_line(result, r, concat(carry, n)),
+        // for 2nd part
       ]
       |> list.any(fn(x) { x })
     }
@@ -61,7 +62,7 @@ pub fn main() {
   })
   |> list.filter(fn(x) {
     case x {
-      #(r, [n, ..l]) -> calculate(r, l, n)
+      #(r, [n, ..l]) -> test_line(r, l, n)
       _ -> False
     }
   })
