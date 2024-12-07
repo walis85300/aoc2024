@@ -25,20 +25,12 @@ fn calculate(result: Int, numbers: List(Int), carry: Int) -> Bool {
     [], carry if carry == result -> True
     _, carry if carry > result -> False
     [n, ..r], carry -> {
-      let next_result = mult(carry, n)
-      case calculate(result, r, next_result) {
-        True -> True
-        False -> {
-          let next_result = summ(carry, n)
-          case calculate(result, r, next_result) {
-            True -> True
-            False -> {
-              let next_result = concat(carry, n)
-              calculate(result, r, next_result)
-            }
-          }
-        }
-      }
+      [
+        calculate(result, r, mult(carry, n)),
+        calculate(result, r, summ(carry, n)),
+        calculate(result, r, concat(carry, n)), // for 2nd part
+      ]
+      |> list.any(fn(x) { x })
     }
     _, _ -> False
   }
