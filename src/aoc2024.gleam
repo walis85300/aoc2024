@@ -1,75 +1,51 @@
+import gleam/dict
 import gleam/int
 import gleam/io
 import gleam/list
+import gleam/pair
+import gleam/result
 import gleam/string
 import simplifile.{read}
 
-fn mult(a: Int, b: Int) -> Int {
-  a * b
-}
-
-fn summ(a: Int, b: Int) -> Int {
-  a + b
-}
-
-fn concat(a: Int, b: Int) -> Int {
-  let a = a |> int.to_string
-  let b = b |> int.to_string
-  let c = a <> b
-  let assert Ok(c) = c |> int.parse
-  c
-}
-
-fn test_line(result: Int, numbers: List(Int), carry: Int) -> Bool {
-  case numbers, carry {
-    [], carry if carry == result -> True
-    _, carry if carry > result -> False
-    [n, ..r], carry -> {
-      [
-        test_line(result, r, mult(carry, n)),
-        test_line(result, r, summ(carry, n)),
-        test_line(result, r, concat(carry, n)),
-        // for 2nd part
-      ]
-      |> list.any(fn(x) { x })
-    }
-    _, _ -> False
-  }
+pub type Position {
+  Free
+  Node(String)
 }
 
 pub fn main() {
-  let assert Ok(records) = read(from: "./aoc2024_7.txt")
+  let assert Ok(records) = read(from: "./aoc2024_8.txt")
 
-  records
-  |> string.trim_end
-  |> string.split(on: "\n")
-  |> list.map(fn(x) {
-    case x |> string.split(":") {
-      [r, n] -> {
-        let n =
-          n
-          |> string.trim
-          |> string.split(" ")
-          |> list.map(fn(i) {
-            let assert Ok(i) = int.parse(i)
-            i
-          })
-        let assert Ok(r) = int.parse(r)
-        #(r, n)
+  let l =
+    records
+    |> string.trim_end
+    |> string.split(on: "\n")
+    |> list.index_map(fn(a, row) {
+      a
+      |> string.to_graphemes
+      |> list.index_map(fn(x, col) {
+        let b = case x {
+          "." -> Free
+          c -> Node(c)
+        }
+        #(#(col, row), b)
+      })
+    })
+    |> list.flat_map(fn(x) { x })
+
+  let max = l |> list.last |> result.lazy_unwrap(fn() { panic }) |> pair.first
+
+  let map =
+    l
+    |> list.filter(fn(x) {
+      case x {
+        #(_, Node(_)) -> True
+        _ -> False
       }
-      _ -> panic
-    }
-  })
-  |> list.filter(fn(x) {
-    case x {
-      #(r, [n, ..l]) -> test_line(r, l, n)
-      _ -> False
-    }
-  })
-  |> list.fold(0, fn(a, acc) {
-    case acc {
-      #(n, _) -> a + n
-    }
-  })
-  |> io.debug
+    })
+    |> list.group(by: pair.second)
+    |> dict.map_values(fn(_k, v) { v |> list.map(pair.first) })
+    |> dict.values
+
+  let info = #(map, max)
+  io.debug(info)
 }
