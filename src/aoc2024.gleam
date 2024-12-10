@@ -13,10 +13,11 @@ type DotPotion =
 type IdPosition =
   Position
 
-fn is_dot(x: Position) -> Bool {
-  case x {
-    #(_, x) if x == "." -> True
-    _ -> False
+fn h(l: List(Position)) {
+  case l {
+    [#(_, "."), ..] -> 0
+    [#(_, _), ..r] -> 1 + h(r)
+    [] -> 0
   }
 }
 
@@ -26,27 +27,22 @@ fn w(
   r: List(#(IdPosition, DotPotion)),
   nl: Int,
 ) {
-  let py =
-    case l |> list.partition(is_dot) {
-      #(a, _) -> a
-    }
-    |> list.length
-  case py {
-    ly if ly == nl -> {
-      l
-    }
-    _ -> {
-      let #(id_position, dot_position) = p
-      let #(dp, _) = dot_position
-      let #(np, nn) = id_position
-      let l = l |> list.key_set(dp, nn) |> list.key_set(np, ".")
+  let #(id_position, dot_position) = p
+  let #(dp, _) = dot_position
+  let #(np, nn) = id_position
+
+  let current_pos = h(l)
+  case current_pos >= nl {
+    True -> l
+    False -> {
+      let updated_l =
+        l
+        |> list.key_set(dp, nn)
+        |> list.key_set(np, ".")
+
       case r {
-        [pp, ..r] -> {
-          w(l, pp, r, nl)
-        }
-        [] -> {
-          l
-        }
+        [next_p, ..remaining] -> w(updated_l, next_p, remaining, nl)
+        [] -> updated_l
       }
     }
   }
@@ -66,13 +62,17 @@ pub fn main() {
       case i, x {
         i, x if i % 2 == 0 -> {
           let id = { i / 2 } |> int.to_string
-          string.repeat(id, x)
+          list.range(0, x - 1)
+          |> list.map(fn(_) { id })
         }
-        _, x -> string.repeat(".", x)
+        _, x if x != 0 -> {
+          list.range(0, x - 1)
+          |> list.map(fn(_) { "." })
+        }
+        _, _ -> []
       }
     })
-    |> list.fold("", fn(a, acc) { a <> acc })
-    |> string.split(on: "")
+    |> list.flat_map(fn(x) { x })
     |> list.index_map(fn(x, i) { #(i, x) })
 
   let dot_position: List(DotPotion) =
@@ -94,16 +94,24 @@ pub fn main() {
     })
     |> list.reverse
 
-  let nl = num_position |> list.count(fn(_) { True })
+  let nl = num_position |> list.length
   let zipped = list.zip(num_position, dot_position)
 
   case zipped {
     [p, ..r] -> w(records, p, r, nl)
     _ -> records
   }
-  |> list.fold("", fn(a, acc) {
-    let #(_, nn) = acc
-    a <> nn
+  |> io.debug
+  |> list.map(fn(x) {
+    let #(n, v) = x
+    case n, v {
+      _, v if v == "0" || v == "." -> 0
+      n, v -> {
+        let assert Ok(v) = v |> int.parse
+        n * v
+      }
+    }
   })
+  |> list.fold(0, fn(acc, a) { acc + a })
   |> io.debug
 }
