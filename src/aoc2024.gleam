@@ -125,12 +125,13 @@ pub fn main() {
       _ -> []
     }
     |> list.map(fn(x) {
-      case x {
-        #(_, b) -> b
-      }
+      let #(_, b) = x
+      b
     })
+    // get all the destinations
     |> set.from_list
     |> set.to_list
+    // ensure unique destinations
   })
   |> list.fold(0, fn(acc, a) { { a |> list.length } + acc })
   |> io.debug
@@ -142,11 +143,7 @@ pub fn main() {
       [h, ..r] -> move_in_map(dict_map, h, r, p, p)
       _ -> []
     }
-    |> list.group(fn(i) {
-      case i {
-        #(a, b) -> #(a, b)
-      }
-    })
+    |> list.group(fn(i) { i })
     |> dict.to_list
     |> list.map(fn(a) {
       let #(_, b) = a
