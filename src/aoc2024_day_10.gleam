@@ -28,6 +28,15 @@ fn move_point(p1: Position, p2: Position) -> Position {
   #(x1 + x2, y1 + y2)
 }
 
+fn move(map, n, r, position, initial_position) {
+  [
+    move_in_map(map, n, r, move_point(position, move_up), initial_position),
+    move_in_map(map, n, r, move_point(position, move_down), initial_position),
+    move_in_map(map, n, r, move_point(position, move_right), initial_position),
+    move_in_map(map, n, r, move_point(position, move_left), initial_position),
+  ]
+}
+
 fn move_in_map(
   map: DictMap,
   num: Int,
@@ -44,36 +53,7 @@ fn move_in_map(
         e, _ if e == num -> {
           case path {
             [n, ..r] -> {
-              [
-                move_in_map(
-                  map,
-                  n,
-                  r,
-                  move_point(position, move_up),
-                  initial_position,
-                ),
-                move_in_map(
-                  map,
-                  n,
-                  r,
-                  move_point(position, move_down),
-                  initial_position,
-                ),
-                move_in_map(
-                  map,
-                  n,
-                  r,
-                  move_point(position, move_right),
-                  initial_position,
-                ),
-                move_in_map(
-                  map,
-                  n,
-                  r,
-                  move_point(position, move_left),
-                  initial_position,
-                ),
-              ]
+              move(map, n, r, position, initial_position)
               |> list.flatten
             }
             _ -> []
