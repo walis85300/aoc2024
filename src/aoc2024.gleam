@@ -1,117 +1,159 @@
+import gleam/dict.{type Dict}
 import gleam/int
 import gleam/io
 import gleam/list
+import gleam/set
 import gleam/string
 import simplifile.{read}
 
+const move_up = #(0, -1)
+
+const move_down = #(0, 1)
+
+const move_right = #(1, 0)
+
+const move_left = #(-1, 0)
+
+const path = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+
 type Position =
-  #(Int, String)
+  #(Int, Int)
 
-type DotPotion =
-  Position
+type DictMap =
+  Dict(Position, Int)
 
-type IdPosition =
-  Position
-
-fn h(l: List(Position)) {
-  case l {
-    [#(_, "."), ..] -> 0
-    [#(_, _), ..r] -> 1 + h(r)
-    [] -> 0
-  }
+fn move_point(p1: Position, p2: Position) -> Position {
+  let #(x1, y1) = p1
+  let #(x2, y2) = p2
+  #(x1 + x2, y1 + y2)
 }
 
-fn w(
-  l: List(Position),
-  p: #(IdPosition, DotPotion),
-  r: List(#(IdPosition, DotPotion)),
-  nl: Int,
+fn move_in_map(
+  map: DictMap,
+  num: Int,
+  path: List(Int),
+  position: Position,
+  initial_position: Position,
 ) {
-  let #(id_position, dot_position) = p
-  let #(dp, _) = dot_position
-  let #(np, nn) = id_position
+  let element = map |> dict.get(position)
 
-  let current_pos = h(l)
-  case current_pos >= nl {
-    True -> l
-    False -> {
-      let updated_l =
-        l
-        |> list.key_set(dp, nn)
-        |> list.key_set(np, ".")
-
-      case r {
-        [next_p, ..remaining] -> w(updated_l, next_p, remaining, nl)
-        [] -> updated_l
+  case element {
+    Ok(e) -> {
+      case e, path {
+        e, [] if e == 0 -> [#(initial_position, position)]
+        e, _ if e == num -> {
+          case path {
+            [n, ..r] -> {
+              [
+                move_in_map(
+                  map,
+                  n,
+                  r,
+                  move_point(position, move_up),
+                  initial_position,
+                ),
+                move_in_map(
+                  map,
+                  n,
+                  r,
+                  move_point(position, move_down),
+                  initial_position,
+                ),
+                move_in_map(
+                  map,
+                  n,
+                  r,
+                  move_point(position, move_right),
+                  initial_position,
+                ),
+                move_in_map(
+                  map,
+                  n,
+                  r,
+                  move_point(position, move_left),
+                  initial_position,
+                ),
+              ]
+              |> list.flatten
+            }
+            _ -> []
+          }
+        }
+        _, _ -> []
       }
     }
+    _ -> []
   }
 }
 
 pub fn main() {
-  let assert Ok(records) = read(from: "./aoc2024_9.txt")
-  let records: List(Position) =
+  let assert Ok(records) = read(from: "./aoc2024_10.txt")
+
+  let map =
     records
     |> string.trim_end
-    |> string.split(on: "")
-    |> list.map(fn(i) {
-      let assert Ok(i) = int.parse(i)
-      i
+    |> string.split(on: "\n")
+    |> list.index_map(fn(y, index_y) {
+      string.split(y, on: "")
+      |> list.index_map(fn(x, index_x) {
+        let assert Ok(x) = x |> int.parse
+        #(#(index_x, index_y), x)
+      })
     })
-    |> list.index_map(fn(x, i) {
-      case i, x {
-        i, x if i % 2 == 0 -> {
-          let id = { i / 2 } |> int.to_string
-          list.range(0, x - 1)
-          |> list.map(fn(_) { id })
-        }
-        _, x if x != 0 -> {
-          list.range(0, x - 1)
-          |> list.map(fn(_) { "." })
-        }
-        _, _ -> []
-      }
-    })
-    |> list.flat_map(fn(x) { x })
-    |> list.index_map(fn(x, i) { #(i, x) })
+    |> list.flatten
 
-  let dot_position: List(DotPotion) =
-    records
+  let dict_map: DictMap = map |> dict.from_list
+
+  let nines =
+    map
     |> list.filter(fn(x) {
       case x {
-        #(_, x) if x == "." -> True
+        #(#(_, _), a) if a == 9 -> True
         _ -> False
       }
     })
-
-  let num_position: List(IdPosition) =
-    records
-    |> list.filter(fn(x) {
-      case x {
-        #(_, x) if x != "." -> True
-        _ -> False
-      }
+    |> list.map(fn(x) {
+      let #(a, _) = x
+      a
     })
-    |> list.reverse
 
-  let nl = num_position |> list.length
-  let zipped = list.zip(num_position, dot_position)
-
-  case zipped {
-    [p, ..r] -> w(records, p, r, nl)
-    _ -> records
-  }
-  |> io.debug
-  |> list.map(fn(x) {
-    let #(n, v) = x
-    case n, v {
-      _, v if v == "0" || v == "." -> 0
-      n, v -> {
-        let assert Ok(v) = v |> int.parse
-        n * v
-      }
+  // first part
+  nines
+  |> list.map(fn(p) {
+    case path {
+      [h, ..r] -> move_in_map(dict_map, h, r, p, p)
+      _ -> []
     }
+    |> list.map(fn(x) {
+      case x {
+        #(_, b) -> b
+      }
+    })
+    |> set.from_list
+    |> set.to_list
   })
-  |> list.fold(0, fn(acc, a) { acc + a })
+  |> list.fold(0, fn(acc, a) { { a |> list.length } + acc })
+  |> io.debug
+
+  // second part
+  nines
+  |> list.map(fn(p) {
+    case path {
+      [h, ..r] -> move_in_map(dict_map, h, r, p, p)
+      _ -> []
+    }
+    |> list.group(fn(i) {
+      case i {
+        #(a, b) -> #(a, b)
+      }
+    })
+    |> dict.to_list
+    |> list.map(fn(a) {
+      let #(_, b) = a
+      b |> list.length
+    })
+  })
+  |> list.flatten
+  |> list.fold(0, fn(a, acc) { a + acc })
   |> io.debug
 }
