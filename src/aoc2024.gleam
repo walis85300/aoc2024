@@ -1,156 +1,67 @@
-import gleam/dict.{type Dict}
 import gleam/int
 import gleam/io
 import gleam/list
-import gleam/set
 import gleam/string
-import simplifile.{read}
+import utils/read_file.{read_file}
 
-const move_up = #(0, -1)
-
-const move_down = #(0, 1)
-
-const move_right = #(1, 0)
-
-const move_left = #(-1, 0)
-
-const path = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
-
-type Position =
-  #(Int, Int)
-
-type DictMap =
-  Dict(Position, Int)
-
-fn move_point(p1: Position, p2: Position) -> Position {
-  let #(x1, y1) = p1
-  let #(x2, y2) = p2
-  #(x1 + x2, y1 + y2)
+fn only_zeros(a: String, r: List(String)) {
+  case a, r {
+    a, [b, ..r] if a == "0" -> only_zeros(b, r)
+    a, [] if a == "0" -> True
+    _, _ -> False
+  }
 }
 
-fn move_in_map(
-  map: DictMap,
-  num: Int,
-  path: List(Int),
-  position: Position,
-  initial_position: Position,
-) {
-  let element = map |> dict.get(position)
-
-  case element {
-    Ok(e) -> {
-      case e, path {
-        e, [] if e == 0 -> [#(initial_position, position)]
-        e, _ if e == num -> {
-          case path {
-            [n, ..r] -> {
-              [
-                move_in_map(
-                  map,
-                  n,
-                  r,
-                  move_point(position, move_up),
-                  initial_position,
-                ),
-                move_in_map(
-                  map,
-                  n,
-                  r,
-                  move_point(position, move_down),
-                  initial_position,
-                ),
-                move_in_map(
-                  map,
-                  n,
-                  r,
-                  move_point(position, move_right),
-                  initial_position,
-                ),
-                move_in_map(
-                  map,
-                  n,
-                  r,
-                  move_point(position, move_left),
-                  initial_position,
-                ),
-              ]
-              |> list.flatten
-            }
-            _ -> []
-          }
-        }
-        _, _ -> []
-      }
+fn check_even(a: String) {
+  let a_oz = case a |> string.split("") {
+    [a, ..r] -> only_zeros(a, r)
+    _ -> False
+  }
+  case a_oz {
+    True -> "0"
+    False -> {
+      let assert Ok(a) = a |> int.parse
+      a |> int.to_string
     }
-    _ -> []
+  }
+}
+
+fn handle(e: String, r: List(String), b: List(String)) {
+  let is_even = { e |> string.length } % 2 == 0
+  let h = case e {
+    e if e == "0" -> ["1"]
+    e if is_even -> {
+      let len = e |> string.length
+      let half = len / 2
+      let fh = e |> string.slice(0, half) |> check_even
+      let lh = e |> string.slice(half, len) |> check_even
+
+      [fh, lh]
+    }
+    e -> {
+      let assert Ok(e) = e |> int.parse
+      let e = e * 2024
+      [e |> int.to_string]
+    }
+  }
+  let b = b |> list.append(h)
+  case r {
+    [e, ..r] -> handle(e, r, b)
+    _ -> b
   }
 }
 
 pub fn main() {
-  let assert Ok(records) = read(from: "./aoc2024_10.txt")
+  let records = read_file("./aoc2024_11.txt") |> string.split(" ")
 
-  let map =
-    records
-    |> string.trim_end
-    |> string.split(on: "\n")
-    |> list.index_map(fn(y, index_y) {
-      string.split(y, on: "")
-      |> list.index_map(fn(x, index_x) {
-        let assert Ok(x) = x |> int.parse
-        #(#(index_x, index_y), x)
-      })
-    })
-    |> list.flatten
-
-  let dict_map: DictMap = map |> dict.from_list
-
-  let nines =
-    map
-    |> list.filter(fn(x) {
-      case x {
-        #(#(_, _), a) if a == 9 -> True
-        _ -> False
-      }
-    })
-    |> list.map(fn(x) {
-      let #(a, _) = x
-      a
-    })
-
-  // first part
-  nines
-  |> list.map(fn(p) {
-    case path {
-      [h, ..r] -> move_in_map(dict_map, h, r, p, p)
+  list.range(1, 75)
+  |> list.fold(records, fn(a, _) {
+    let b: List(String) = []
+    case a {
+      [e, ..r] -> handle(e, r, b)
       _ -> []
     }
-    |> list.map(fn(x) {
-      let #(_, b) = x
-      b
-    })
-    // get all the destinations
-    |> set.from_list
-    |> set.to_list
-    // ensure unique destinations
   })
-  |> list.fold(0, fn(acc, a) { { a |> list.length } + acc })
-  |> io.debug
-
-  // second part
-  nines
-  |> list.map(fn(p) {
-    case path {
-      [h, ..r] -> move_in_map(dict_map, h, r, p, p)
-      _ -> []
-    }
-    |> list.group(fn(i) { i })
-    |> dict.to_list
-    |> list.map(fn(a) {
-      let #(_, b) = a
-      b |> list.length
-    })
-  })
-  |> list.flatten
-  |> list.fold(0, fn(a, acc) { a + acc })
+  |> list.length
   |> io.debug
 }
